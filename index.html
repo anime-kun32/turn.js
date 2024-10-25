@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Reader with Turn.js</title>
+    
+    <!-- jQuery Library -->
+    <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+    
+    <!-- Local Turn.js Library -->
+    <script type="text/javascript" src="./turn.js"></script>
+    
+    <!-- PDF.js Library -->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+    
+    <!-- Styles -->
+    <style type="text/css">
+        body {
+            background: #ccc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: Arial, sans-serif;
+        }
+        #upload-section {
+            margin: 20px;
+        }
+        #magazine {
+            width: 576px;
+            height: 752px;
+            display: none;
+            box-shadow: 0px 4px 8px rgba(0,0,0,0.2);
+        }
+        #magazine .turn-page {
+            background-color: #ccc;
+            background-size: 100% 100%;
+        }
+        .button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            color: #ffffff;
+            background-color: #007BFF;
+            border: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="upload-section">
+    <input type="file" id="pdf-upload" accept="application/pdf">
+    <button class="button" id="load-pdf">Load PDF</button>
+</div>
+
+<div id="magazine"></div>
+
+<script type="text/javascript">
+    document.getElementById('load-pdf').addEventListener('click', async () => {
+        const fileInput = document.getElementById('pdf-upload');
+        const file = fileInput.files[0];
+
+        if (file && file.type === "application/pdf") {
+            const url = URL.createObjectURL(file);
+            const pdf = await pdfjsLib.getDocument(url).promise;
+            const magazine = document.getElementById('magazine');
+
+            // Clear magazine content and show it
+            magazine.innerHTML = '';
+            magazine.style.display = 'block';
+
+            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                const page = await pdf.getPage(pageNum);
+                const viewport = page.getViewport({ scale: 1.5 });
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+
+                // Render PDF page into canvas
+                await page.render({ canvasContext: context, viewport: viewport }).promise;
+
+                // Create a div with the rendered page as background image
+                const pageDiv = document.createElement('div');
+                pageDiv.classList.add('turn-page');
+                pageDiv.style.width = "576px";
+                pageDiv.style.height = "752px";
+                pageDiv.style.backgroundImage = `url(${canvas.toDataURL()})`;
+
+                // Append page to magazine
+                magazine.appendChild(pageDiv);
+            }
+
+            // Initialize Turn.js
+            $('#magazine').turn({
+                display: 'single',
+                acceleration: true,
+                gradients: !$.isTouch,
+                elevation: 50,
+                when: {
+                    turned: function(e, page) {
+                        // Optional: log the current page
+                    }
+                }
+            });
+        } else {
+            alert("Please upload a valid PDF file.");
+        }
+    });
+
+    // Keyboard navigation for Turn.js
+    $(window).bind('keydown', function(e) {
+        if (e.keyCode == 37) {
+            $('#magazine').turn('previous');
+        } else if (e.keyCode == 39) {
+            $('#magazine').turn('next');
+        }
+    });
+</script>
+
+</body>
+  </html>
+  
