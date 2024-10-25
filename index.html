@@ -9,7 +9,7 @@
     <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
     
     <!-- Local Turn.js Library -->
-    <script type="text/javascript" src="./turn.js"></script>
+    <script type="text/javascript" src="path/to/turn.min.js"></script>
     
     <!-- PDF.js Library -->
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
@@ -71,6 +71,7 @@
             magazine.innerHTML = '';
             magazine.style.display = 'block';
 
+            // Pre-render pages and add to magazine
             for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
                 const page = await pdf.getPage(pageNum);
                 const viewport = page.getViewport({ scale: 1.5 });
@@ -80,29 +81,27 @@
                 canvas.width = viewport.width;
                 canvas.height = viewport.height;
 
-                // Render PDF page into canvas
                 await page.render({ canvasContext: context, viewport: viewport }).promise;
 
-                // Create a div with the rendered page as background image
                 const pageDiv = document.createElement('div');
                 pageDiv.classList.add('turn-page');
                 pageDiv.style.width = "576px";
                 pageDiv.style.height = "752px";
                 pageDiv.style.backgroundImage = `url(${canvas.toDataURL()})`;
 
-                // Append page to magazine
                 magazine.appendChild(pageDiv);
             }
 
-            // Initialize Turn.js
+            // Initialize Turn.js with double-page view and other settings
             $('#magazine').turn({
-                display: 'single',
+                display: 'double',
                 acceleration: true,
                 gradients: !$.isTouch,
                 elevation: 50,
+                autoCenter: true,
                 when: {
                     turned: function(e, page) {
-                        // Optional: log the current page
+                        console.log('Current view:', $(this).turn('view'));
                     }
                 }
             });
@@ -122,5 +121,4 @@
 </script>
 
 </body>
-  </html>
-  
+</html>
